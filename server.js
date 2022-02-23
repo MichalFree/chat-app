@@ -16,14 +16,30 @@ app.get("*", (req, res) => {
 });
 
 io.on('connection', (socket) => {
+    socket.on("join", (name) => {
+        console.log(`${name} Joined`);
+        users.push({ name, id: socket.id });
+        socket.broadcast.emit("message", {
+            author: "Chat Bot",
+            content: `${name} join to chat :)`,
+        });
+    });
     console.log('New client! Its id – ' + socket.id);
     socket.on('message', (message) => {
         console.log('Oh, I\'ve got something from ' + socket.id);
         messages.push(message);
         socket.broadcast.emit('message', message);
     });
-    socket.on('disconnect', () => {
-        console.log('Oh, socket ' + socket.id + ' has left')
+    socket.on("disconnect", () => {
+        console.log("Oh, socket " + socket.id + " has left");
+        const i = users.findIndex((user) => user.id === socket.id);
+        if (i >= 0) {
+            socket.broadcast.emit("message", {
+                author: "Chat Bot",
+                content: `${users[i].name} left :(`,
+            });
+            users.splice(i, 1);
+        }
     });
     console.log('I\'ve added a listener on message and disconnect events \n');
 });
